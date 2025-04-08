@@ -11,6 +11,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 public class MainHook implements IXposedHookLoadPackage {
     private static final String TAG = "AlwaysBatterySaver";
 
+    private static final String BATTERY_SAVER_STATE_MACHINE_CLASS = "com.android.server.power.batterysaver.BatterySaverStateMachine";
+
     private static final int REASON_PLUGGED_IN = 7;
 
     @Override
@@ -19,13 +21,34 @@ public class MainHook implements IXposedHookLoadPackage {
             log("Handling Android package");
 
             log("Hooking BatterySaverStateMachine...");
-            hookBatterySaverStateMachine(lpparam);
+            hookSetBatteryStatus(lpparam);
+            hookEnableBatterySaverLocked(lpparam);
         }
 
     }
 
-    private void hookBatterySaverStateMachine(XC_LoadPackage.LoadPackageParam lpparam) {
-        findAndHookMethod("com.android.server.power.batterysaver.BatterySaverStateMachine", lpparam.classLoader, "enableBatterySaverLocked", boolean.class, boolean.class, int.class, String.class, new XC_MethodHook() {
+
+    private void hookSetBatteryStatus(XC_LoadPackage.LoadPackageParam lpparam) {
+
+        XposedHelpers.findAndHookMethod(BATTERY_SAVER_STATE_MACHINE_CLASS, lpparam.classLoader, "setBatteryStatus", boolean.class, int.class, boolean.class, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                boolean originalPowered = (boolean) param.args[0];
+                int level = (int) param.args[1];
+                boolean isLow = (boolean) param.args[2];
+
+                log("Hooking setBatteryStatus: originalPowered=" + originalPowered + ", level=" + level + ", isLow=" + isLow);
+
+                if (originalPowered) {
+                    log("Intercepted setBatteryStatus: Device is charging. Forcing 'newPowered' argument to false.");
+                    param.args[0] = false;
+                }
+            }
+        });
+    }
+
+    private void hookEnableBatterySaverLocked(XC_LoadPackage.LoadPackageParam lpparam) {
+        findAndHookMethod(BATTERY_SAVER_STATE_MACHINE_CLASS, lpparam.classLoader, "enableBatterySaverLocked", boolean.class, boolean.class, int.class, String.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 boolean enable = (boolean) param.args[0];
