@@ -8,6 +8,11 @@
             android:key="enable_module"
             android:summary="@string/enable_module_summary"
             android:title="@string/enable_module" />
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="dynamic_hook"
+            android:summary="@string/dynamic_hook_summary"
+            android:title="@string/dynamic_hook" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="settings"
