@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="general"
+        android:title="@string/general">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="enable_module"
+            android:summary="@string/enable_module_summary"
+            android:title="@string/enable_module" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="settings"
+        android:title="@string/settings">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="block_enableBatterySaver_on_charge"
+            android:summary="@string/block_enableBatterySaver_on_charge_summary"
+            android:title="@string/block_enableBatterySaver_on_charge" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="block_setBatteryStatus"
+            android:summary="@string/block_setBatteryStatus_summary"
+            android:title="@string/block_setBatteryStatus" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="experimental"
+        android:title="@string/experimental">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="block_enableBatterySaver_any"
+            android:summary="@string/block_enableBatterySaver_any_summary"
+            android:title="@string/block_enableBatterySaver_any" />
+    </PreferenceCategory>
+</PreferenceScreen>

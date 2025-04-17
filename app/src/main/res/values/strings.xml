@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">Always Battery Saver</string>
+
+    <string name="xposed_desc">Allows you to keep Battery Saver enabled</string>
+
+    <string name="module_not_loaded">Module not loaded</string>
+    <string name="will_not_save">Any changes you make will not be saved</string>
+
+    <string name="general">General</string>
+    <string name="enable_module">Enable module</string>
+    <string name="enable_module_summary">Enable or disable module</string>
+    <string name="dynamic_hook">Dynamic Hook</string>
+    <string name="dynamic_hook_summary">Dynamic search and hook methods to avoid static hook failure caused by OEM changes</string>
+
+    <string name="settings">Settings</string>
+    <string name="block_enableBatterySaver_on_charge">Block on charge</string>
+    <string name="block_enableBatterySaver_on_charge_summary">Prevent disabling Battery Saver when charging</string>
+    <string name="block_setBatteryStatus">Block update charge state</string>
+    <string name="block_setBatteryStatus_summary">Prevents updating the charging status, always returns not charged</string>
+
+    <string name="experimental">Experimental</string>
+    <string name="block_enableBatterySaver_any">Block Method</string>
+    <string name="block_enableBatterySaver_any_summary">Prevents changing Battery Saver, no matter what</string>
+
 </resources>

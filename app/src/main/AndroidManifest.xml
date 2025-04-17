@@ -4,22 +4,34 @@
 
     <application
         android:label="@string/app_name"
-        android:supportsRtl="true"
         tools:targetApi="31">
 
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
         <meta-data
+            android:name="xposedsharedprefs"
+            android:value="true" />
+        <meta-data
             android:name="xposeddescription"
-            android:value="Allows you to keep Battery Saver enabled" />
+            android:value="@string/xposed_desc" />
         <meta-data
             android:name="xposedminversion"
             android:value="53" />
         <meta-data
             android:name="xposedscope"
-            android:value="android" />
+            android:resource="@array/xposed_scope" />
 
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+                <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

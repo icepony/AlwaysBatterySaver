@@ -43,7 +43,7 @@ This module uses the Xposed Framework to modify the behavior of the Android syst
 
 I have some ideas for future enhancements, but these are not guaranteed:
 
-*   **Settings UI:** Add a simple configuration UI to toggle the module's functionality or potentially add more options later.
+*   ~~**Settings UI:** Add a simple configuration UI to toggle the module's functionality or potentially add more options later.~~
 *   **UI Unlocking:** Hook the Battery Saver settings page and the Quick Settings tile to prevent them from becoming disabled or grayed out while the device is charging and Battery Saver is forced on by this module.
 *   **Extend Support to Android 5.0 (Lollipop):** Power Saving Mode seems to be present in Android since API level 21, so supporting older devices might be feasible. This would require investigating compatibility with the `BatterySaverStateMachine` class or equivalent in those versions.
 
