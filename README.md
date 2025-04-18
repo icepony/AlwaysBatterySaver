@@ -12,18 +12,17 @@ Android's default behavior is to automatically disable Battery Saver mode as soo
 
 **Always Battery Saver** is a simple Xposed module that intercepts the system call responsible for disabling Battery Saver due to charging and prevents it, effectively keeping Battery Saver active if you enabled it manually.
 
-## How it Works (Technical Details)
+## Core Logic
 
-This module uses the Xposed Framework to modify the behavior of the Android system server (`android` package).
+This module works by hooking into the Android system server (`android` package), specifically targeting methods within the `com.android.server.power.batterysaver.BatterySaverStateMachine` class (or dynamically finding similar methods).
 
-1.  **Target:** The module hooks into the `com.android.server.power.batterysaver.BatterySaverStateMachine` class within the Android system server process.
-2.  **Method Hook:** It specifically targets the `enableBatterySaverLocked(boolean enable, boolean manual, int reason, String reasonStr)` method.
-3.  **Interception Logic:**
-    *   The module examines the parameters passed to `enableBatterySaverLocked` *before* the original method runs.
-    *   It checks if the method is being called to *disable* Battery Saver (`enable` parameter is `false`).
-    *   It checks if the reason for disabling is that the device was plugged in (`reason` parameter is `7`, corresponding to `REASON_PLUGGED_IN`).
-    *   If both conditions are true (trying to disable Battery Saver *because* it's plugged in), the module prevents the original `enableBatterySaverLocked` method from executing (`param.setResult(null)`).
-4.  **Result:** Battery Saver mode remains enabled even when the device starts charging, provided it was already manually enabled.
+It intercepts system calls related to Battery Saver state changes:
+
+1.  **`enableBatterySaverLocked`:**
+    *   Prevents Battery Saver from being automatically disabled when the device is plugged in (`reason = 7 / "Plugged in"`), if the corresponding option is enabled.
+    *   (Experimental) Can block *all* calls to this method to lock the current Battery Saver state.
+2.  **`setBatteryStatus`:**
+    *   Can prevent the system from notifying the Battery Saver service that the device is charging (`newPowered = true`), effectively making the system think it's always on battery.
 
 ## Requirements
 
@@ -52,6 +51,10 @@ I have some ideas for future enhancements, but these are not guaranteed:
 *   This module modifies core system behavior. Conflicts with other power-management Xposed modules *might* occur, though unlikely given its specific target.
 *   The targeted class (`BatterySaverStateMachine`) and method (`enableBatterySaverLocked`) could potentially change in future Android versions or heavily modified custom ROMs, which might break the module's functionality. If you encounter issues, please report them on the [Issues](https://github.com/icepony/AlwaysBatterySaver/issues) page.
 
+## Contribution
+
+Contributions are welcome! Feel free to open issues or submit pull requests. Key areas for improvement include refining hooks, implementing dynamic method finding, and testing across various devices/ROMs.
+
 ## Check Out My Other Project!
 
 If you find system modifications useful, you might also like:
@@ -69,3 +72,5 @@ If this module helps you out, I'd be really happy if you could visit the [Releas
 - [ChatGPT](https://chatgpt.com/)
 - [CorePatch](https://github.com/LSPosed/CorePatch)
 
+---
+*Disclaimer: Modifying system behavior with Xposed can potentially lead to instability. Use at your own risk.*
