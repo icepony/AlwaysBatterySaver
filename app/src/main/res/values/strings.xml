@@ -6,20 +6,21 @@
     <string name="module_not_loaded">Module not loaded</string>
     <string name="will_not_save">Any changes you make will not be saved</string>
 
-    <string name="general">General</string>
-    <string name="enable_module">Enable module</string>
-    <string name="enable_module_summary">Enable or disable module</string>
-    <string name="dynamic_hook">Dynamic Hook</string>
-    <string name="dynamic_hook_summary">Dynamic search and hook methods to avoid static hook failure caused by OEM changes</string>
+    <string name="category_general">General</string>
+    <string name="enable_module">Enable Module</string>
+    <string name="enable_module_summary">Master switch to enable/disable all module functions.</string>
 
-    <string name="settings">Settings</string>
-    <string name="block_enableBatterySaver_on_charge">Block on charge</string>
-    <string name="block_enableBatterySaver_on_charge_summary">Prevent disabling Battery Saver when charging</string>
-    <string name="block_setBatteryStatus">Block update charge state</string>
-    <string name="block_setBatteryStatus_summary">Prevents updating the charging status, always returns not charged</string>
+    <string name="category_settings">Settings</string>
+    <string name="lock_on_plugged_in_title">Prevent Disabling on Plugged In event</string>
+    <string name="lock_on_plugged_in_summary">Stops the system from automatically turning off Battery Saver when the device is plugged in.</string>
+    <string name="lock_if_power_title">Prevent Disabling on Power</string>
+    <string name="lock_if_power_summary">Prevents disabling the Battery Saver if it is now charging.</string>
+    <string name="fake_power_title">Hide Charging Status from Battery Saver</string>
+    <string name="fake_power_summary">Prevents the system from telling Battery Saver that the device is charging.</string>
 
-    <string name="experimental">Experimental</string>
-    <string name="block_enableBatterySaver_any">Block Method</string>
-    <string name="block_enableBatterySaver_any_summary">Prevents changing Battery Saver, no matter what</string>
-
+    <string name="category_experimental">Experimental</string>
+    <string name="lock_any_title">Lock Battery Saver State</string>
+    <string name="lock_any_summary">Aggressively block *any* change (manual or automatic) to the Battery Saver status. Use with caution!</string>
+    <string name="lock_any_warning_title">Warning: Experimental Feature</string>
+    <string name="lock_any_warning_message">Enabling this option attempts to block all system changes to Battery Saver. This might cause unexpected behavior or conflicts. Use cautiously.</string>
 </resources>

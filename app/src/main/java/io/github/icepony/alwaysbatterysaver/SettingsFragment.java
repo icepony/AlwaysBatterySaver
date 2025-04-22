@@ -10,50 +10,72 @@ import android.view.View;
 
 public class SettingsFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
 
-    private static final String KEY_ENABLE_MODULE = "enable_module";
-    private static final String KEY_EXPERIMENTAL_CATEGORY = "experimental";
-    private static final String KEY_SETTINGS_CATEGORY = "settings";
-
     private SwitchPreference mEnableModuleSwitch;
-    private PreferenceCategory mExperimentalCategory, mSettingsPreferenceCategory;
+    private PreferenceCategory mSettingsPreferenceCategory;
+    private SwitchPreference mLockAnySwitch;
+    private PreferenceCategory mExperimentalCategory;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getPreferenceManager().setSharedPreferencesName(BuildConfig.APPLICATION_ID + "_preferences");
+//        getPreferenceManager().setSharedPreferencesName(BuildConfig.APPLICATION_ID + "_preferences");
         addPreferencesFromResource(R.xml.prefs);
 
-        mEnableModuleSwitch = (SwitchPreference) findPreference(KEY_ENABLE_MODULE);
-        mExperimentalCategory = (PreferenceCategory) findPreference(KEY_EXPERIMENTAL_CATEGORY);
-        mSettingsPreferenceCategory = (PreferenceCategory) findPreference(KEY_SETTINGS_CATEGORY);
+        mEnableModuleSwitch = (SwitchPreference) findPreference("enable_module");
+        mSettingsPreferenceCategory = (PreferenceCategory) findPreference("settings");
+        mExperimentalCategory = (PreferenceCategory) findPreference("experimental");
+        mLockAnySwitch = (SwitchPreference) findPreference("lock_any");
 
-        boolean isModuleEnabled = mEnableModuleSwitch.isChecked();
-        mExperimentalCategory.setEnabled(isModuleEnabled);
-        mSettingsPreferenceCategory.setEnabled(isModuleEnabled);
+        updatePreferenceEnabledStates(mEnableModuleSwitch.isChecked());
 
         mEnableModuleSwitch.setOnPreferenceChangeListener(this);
+        mLockAnySwitch.setOnPreferenceChangeListener(this);
+    }
 
+    private void updatePreferenceEnabledStates(boolean moduleEnabled) {
+        if (!BuildConfig.DEBUG) {
+            if (mSettingsPreferenceCategory != null) {
+                mSettingsPreferenceCategory.setEnabled(moduleEnabled);
+            }
+            if (mExperimentalCategory != null) {
+                mExperimentalCategory.setEnabled(moduleEnabled);
+            }
+        }
     }
 
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
-
-        if (preference.getKey().equals(KEY_ENABLE_MODULE)) {
-            if (newValue instanceof Boolean) {
-                boolean isEnabled = (Boolean) newValue;
-                mExperimentalCategory.setEnabled(isEnabled);
-                mSettingsPreferenceCategory.setEnabled(isEnabled);
-                return true;
-            }
-            return false; // Should not happen
+        if (!(newValue instanceof Boolean)) {
+            return false;
         }
-        return true;
+        boolean isEnabled = (Boolean) newValue;
+        String key = preference.getKey();
+
+        switch (key) {
+            case "enable_module":
+                updatePreferenceEnabledStates(isEnabled);
+                return true;
+
+            case "lock_any":
+                if (isEnabled) {
+                    new AlertDialog.Builder(getActivity())
+                            .setTitle(R.string.lock_any_warning_title)
+                            .setMessage(R.string.lock_any_warning_message)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
+                }
+                return true;
+
+            default:
+                return true;
+        }
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        // Adjust the top distance to avoid conflict with the ActionBar
+//        view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
         view.setOnApplyWindowInsetsListener((v, insets) -> {
             view.setPadding(insets.getSystemWindowInsetLeft(),
                     insets.getSystemWindowInsetTop(),
@@ -68,9 +90,8 @@ public class SettingsFragment extends PreferenceFragment implements Preference.O
     @Override
     public void onResume() {
         super.onResume();
-        if (mEnableModuleSwitch != null && mExperimentalCategory != null) {
-            mExperimentalCategory.setEnabled(mEnableModuleSwitch.isChecked());
-            mSettingsPreferenceCategory.setEnabled(mEnableModuleSwitch.isChecked());
+        if (mEnableModuleSwitch != null) {
+            updatePreferenceEnabledStates(mEnableModuleSwitch.isChecked());
         }
     }
 }

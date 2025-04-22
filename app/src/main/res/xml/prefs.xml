@@ -2,39 +2,39 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:key="general"
-        android:title="@string/general">
+        android:title="@string/category_general">
         <SwitchPreference
             android:defaultValue="true"
             android:key="enable_module"
             android:summary="@string/enable_module_summary"
             android:title="@string/enable_module" />
-        <SwitchPreference
-            android:defaultValue="true"
-            android:key="dynamic_hook"
-            android:summary="@string/dynamic_hook_summary"
-            android:title="@string/dynamic_hook" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="settings"
-        android:title="@string/settings">
+        android:title="@string/category_settings">
         <SwitchPreference
             android:defaultValue="true"
-            android:key="block_enableBatterySaver_on_charge"
-            android:summary="@string/block_enableBatterySaver_on_charge_summary"
-            android:title="@string/block_enableBatterySaver_on_charge" />
+            android:key="lock_on_plugged_in"
+            android:summary="@string/lock_on_plugged_in_summary"
+            android:title="@string/lock_on_plugged_in_title" />
         <SwitchPreference
             android:defaultValue="false"
-            android:key="block_setBatteryStatus"
-            android:summary="@string/block_setBatteryStatus_summary"
-            android:title="@string/block_setBatteryStatus" />
+            android:key="lock_on_power"
+            android:summary="@string/lock_if_power_summary"
+            android:title="@string/lock_if_power_title" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="fake_power"
+            android:summary="@string/fake_power_summary"
+            android:title="@string/fake_power_title" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="experimental"
-        android:title="@string/experimental">
+        android:title="@string/category_experimental">
         <SwitchPreference
             android:defaultValue="false"
-            android:key="block_enableBatterySaver_any"
-            android:summary="@string/block_enableBatterySaver_any_summary"
-            android:title="@string/block_enableBatterySaver_any" />
+            android:key="lock_any"
+            android:summary="@string/lock_any_summary"
+            android:title="@string/lock_any_title" />
     </PreferenceCategory>
 </PreferenceScreen>

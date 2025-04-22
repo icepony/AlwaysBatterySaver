@@ -1,83 +1,115 @@
 package io.github.icepony.alwaysbatterysaver;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
+    public static final int REASON_CODE_PLUGGED_IN = 7;
+    public static final String REASON_STRING_PLUGGED_IN = "Plugged in";
 
-    public static final String TAG = "AlwaysBatterySaver";
+    private boolean isModuleEnabled;
+    private boolean isFakePower;
+    private boolean isLockOnPluggedIn;
+    private boolean isLockOnPower;
+    private boolean isLockAny;
 
-    private static final String BATTERY_SAVER_STATE_MACHINE_CLASS = "com.android.server.power.batterysaver.BatterySaverStateMachine";
-    private static final int REASON_CODE_PLUGGED_IN = 7;
-    private static final String REASON_STRING_PLUGGED_IN = "Plugged in";
+    private void reloadPreferences() {
+        prefs.reload();
+        isModuleEnabled = prefs.getBoolean("enable_module", true);
+        isLockOnPluggedIn = prefs.getBoolean("lock_on_plugged_in", true);
+        isLockOnPower = prefs.getBoolean("lock_on_power", false);
+        isFakePower = prefs.getBoolean("fake_power", false);
+        isLockAny = prefs.getBoolean("lock_any", false);
 
-    XSharedPreferences prefs = new XSharedPreferences(BuildConfig.APPLICATION_ID);
-    boolean isModuleEnable, isBlockSetBatteryStatus, isBlockEnableBatterySaverOnCharge, isBlockEnableBatterySaverAny;
+    }
+
+    private Class<?> batterySaverStateMachineClass;
+    private Field mIsPowered;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
         if (lpparam.packageName.equals("android")) {
-            log("Initial module, enabled state: " + prefs.getBoolean("enable_module", true));
+            reloadPreferences();
+            log("Initializing module hook for Android process. Module enabled preference: " + isModuleEnabled);
 
-            hookBatteryStatusSetter(lpparam);
-            hookBatterySaverEnabler(lpparam);
+            batterySaverStateMachineClass = findClass("com.android.server.power.batterysaver.BatterySaverStateMachine", lpparam.classLoader);
+            mIsPowered = findField(batterySaverStateMachineClass, "mIsPowered");
+
+            hookIsPowered();
+            hookBatterySaverEnabler();
         }
     }
 
-    private void hookBatteryStatusSetter(XC_LoadPackage.LoadPackageParam lpparam) {
-        findAndHookMethod(BATTERY_SAVER_STATE_MACHINE_CLASS,
-                lpparam.classLoader,
-                "setBatteryStatus",
-                boolean.class, int.class, boolean.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        prefs.reload();
-                        isModuleEnable = prefs.getBoolean("enable_module", true);
-                        isBlockSetBatteryStatus = prefs.getBoolean("block_setBatteryStatus", false);
+    private void hookBatterySaverEnabler() {
+        hookAllMethods(batterySaverStateMachineClass, "enableBatterySaverLocked", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                reloadPreferences();
+                if (!isModuleEnabled) {
+                    return;
+                }
 
-                        if (isModuleEnable) {
-                            boolean newPowered = (boolean) param.args[0];
-                            if (newPowered && isBlockSetBatteryStatus) {
-                                log("Intercepted: Set charging status");
-                                param.setResult(null);
-                            }
-                        }
+                if (isLockAny) {
+                    log(param.method.getName() + ": Lock any.");
+                    param.setResult(null);
+                    return;
+                }
+
+                if (isLockOnPower) {
+                    if (mIsPowered.getBoolean(param.thisObject)) {
+                        log(param.method.getName() + ": Lock on power.");
+                        param.setResult(null);
                     }
-                });
+                }
+
+                if (isLockOnPluggedIn) {
+//                    boolean isPluggedIn = Arrays.stream(param.args).anyMatch(o -> o.equals(REASON_CODE_PLUGGED_IN) && o.equals(REASON_STRING_PLUGGED_IN));
+                    boolean isPluggedIn = Arrays.asList(param.args).contains(REASON_STRING_PLUGGED_IN);
+                    if (isPluggedIn) {
+                        log(param.method.getName() + ": Lock on plugged in.");
+                        param.setResult(null);
+                    }
+                }
+            }
+        });
     }
 
-    private void hookBatterySaverEnabler(XC_LoadPackage.LoadPackageParam lpparam) {
-        findAndHookMethod(BATTERY_SAVER_STATE_MACHINE_CLASS,
-                lpparam.classLoader,
-                "enableBatterySaverLocked",
-                boolean.class, boolean.class, int.class, String.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        prefs.reload();
-                        isModuleEnable = prefs.getBoolean("enable_module", true);
-                        isBlockEnableBatterySaverOnCharge = prefs.getBoolean("block_enableBatterySaver_on_charge", false);
-                        isBlockEnableBatterySaverAny = prefs.getBoolean("block_enableBatterySaver_any", false);
+    private void hookIsPowered() {
+//        hookAllMethods(batterySaverStateMachineClass, "setBatteryStatus", new XC_MethodHook() {
+//            @Override
+//            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+//                reloadPreferences();
+//                if (!isModuleEnabled) {
+//                    return;
+//                }
+//
+//                if (isFakePower) {
+//                    boolean newPowered = (boolean) param.args[0];
+//                    if (newPowered) {
+//                        param.setResult(null);
+//                    }
+//                }
+//            }
+//        });
 
-                        if (isModuleEnable) {
-                            if (isBlockEnableBatterySaverAny) {
-                                log("Intercepted: change battery saver");
-                                param.setResult(null);
-                            } else {
-                                int intReason = (int) param.args[2];
-                                String strReason = (String) param.args[3];
-                                if (intReason == REASON_CODE_PLUGGED_IN
-                                        && strReason.equals(REASON_STRING_PLUGGED_IN)
-                                        && isBlockEnableBatterySaverOnCharge) {
-                                    log("Intercepted: Automatically disable battery saver when charging");
-                                    param.setResult(null);
-                                }
-                            }
-                        }
-                    }
-                });
+        hookAllMethods(batterySaverStateMachineClass, "updateStateLocked", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                reloadPreferences();
+                if (!isModuleEnabled) {
+                    return;
+                }
+
+                if (isFakePower) {
+                    log(param.method.getName() + ": Fake power.");
+                    mIsPowered.setBoolean(param.thisObject, false);
+                }
+            }
+        });
     }
+
 }
