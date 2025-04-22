@@ -4,6 +4,7 @@
 
     <application
         android:label="@string/app_name"
+        android:theme="@style/AppTheme"
         tools:targetApi="31">
 
         <meta-data
