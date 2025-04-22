@@ -1,42 +1,33 @@
 # Always Battery Saver
-[![Xposed Module](https://img.shields.io/badge/Xposed%20Module-✓-green.svg)]()
-[![Android Version](https://img.shields.io/badge/Android-9.0%2B-blue.svg)]()
+
+[![Xposed Module](https://img.shields.io/badge/Xposed%20Module-✓-green.svg)](https://github.com/icepony/AlwaysBatterySaver)
+[![Android Version](https://img.shields.io/badge/Android-9.0%2B-blue.svg)](https://android.com)
 [![GitHub issues](https://img.shields.io/github/issues/icepony/AlwaysBatterySaver)](https://github.com/icepony/AlwaysBatterySaver/issues)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/icepony/AlwaysBatterySaver)](https://github.com/icepony/AlwaysBatterySaver/releases/latest)
 
+An Xposed module to prevent Android from automatically disabling Battery Saver when the device is charging.
 
-Keep Android's Battery Saver mode enabled, even when your device is charging.
+## Problem & Solution
 
-## Introduction
+Android's default behavior disables Battery Saver upon charging. This module intercepts specific system calls within the Android System Server (`android` package) to prevent this automatic deactivation, allowing Battery Saver to remain active even while plugged in.
 
-Android's default behavior is to automatically disable Battery Saver mode as soon as the device is plugged in and charging. While this makes sense for most users, there might be scenarios where you *want* to keep Battery Saver active even while charging (e.g., using a very slow charger, wanting to maintain consistent low-power behavior, specific testing needs).
+## Technical Overview
 
-**Always Battery Saver** is a simple Xposed module that intercepts the system call responsible for disabling Battery Saver due to charging and prevents it, effectively keeping Battery Saver active if you enabled it manually.
+The module hooks methods within `com.android.server.power.batterysaver.BatterySaverStateMachine`:
 
-## Core Logic
+1.  **`enableBatterySaverLocked` (all variants):**
+    *   Hooks all methods with this name using `XposedBridge.hookAllMethods`.
+    *   The `beforeHookedMethod` callback checks configured options and can prevent the original method execution (`param.setResult(null)`):
+        *   `lock_on_plugged_in`: Checks if method arguments contain `REASON_STRING_PLUGGED_IN` ("Plugged in").
+        *   `lock_on_power`: Uses reflection to check the current state of the `mIsPowered` field within the `BatterySaverStateMachine` instance.
+        *   `lock_any`: Unconditionally blocks the method call.
 
-This module works by hooking into the Android system server (`android` package), specifically targeting methods within the `com.android.server.power.batterysaver.BatterySaverStateMachine` class (or dynamically finding similar methods).
+2.  **`updateStateLocked`:**
+    *   Hooks this method using `XposedBridge.hookAllMethods`.
+    *   The `beforeHookedMethod` callback modifies internal state:
+        *   `fake_power`: If enabled, uses reflection to set the `mIsPowered` field of the `BatterySaverStateMachine` instance to `false` *before* the original method runs, effectively hiding the charging status from the state machine's internal logic.
 
-It intercepts system calls related to Battery Saver state changes:
-
-1.  **`enableBatterySaverLocked`:**
-    *   Prevents Battery Saver from being automatically disabled when the device is plugged in (`reason = 7 / "Plugged in"`), if the corresponding option is enabled.
-    *   (Experimental) Can block *all* calls to this method to lock the current Battery Saver state.
-2.  **`setBatteryStatus`:**
-    *   Can prevent the system from notifying the Battery Saver service that the device is charging (`newPowered = true`), effectively making the system think it's always on battery.
-
-## Requirements
-
-*   Rooted Android Device
-*   Xposed Framework installed and active (e.g., LSPosed, EdXposed, original Xposed). Compatibility may vary depending on your Android version and ROM.
-
-## Installation
-
-1.  Download the latest APK from the [Releases](https://github.com/icepony/AlwaysBatterySaver/releases) page.
-2.  Install the APK.
-3.  Open your Xposed manager app (e.g., LSPosed).
-4.  Enable the **AlwaysBatterySaver** module. Ensure it's enabled for the `Android System` (or `system_server`) scope.
-5.  Reboot your device.
-6.  Manually enable Battery Saver. It should now stay enabled even when you plug your device in.
+**Note:** This module relies on specific class/method names and the `mIsPowered` field name within AOSP. Significant changes by OEMs or in future Android versions could impact functionality.
 
 ## Future Ideas (Maybe!)
 
@@ -48,29 +39,28 @@ I have some ideas for future enhancements, but these are not guaranteed:
 
 ## Troubleshooting / Compatibility
 
-*   This module modifies core system behavior. Conflicts with other power-management Xposed modules *might* occur, though unlikely given its specific target.
-*   The targeted class (`BatterySaverStateMachine`) and method (`enableBatterySaverLocked`) could potentially change in future Android versions or heavily modified custom ROMs, which might break the module's functionality. If you encounter issues, please report them on the [Issues](https://github.com/icepony/AlwaysBatterySaver/issues) page.
+*   Functionality depends on AOSP class/method/field names (`BatterySaverStateMachine`, `enableBatterySaverLocked`, `updateStateLocked`, `mIsPowered`). Heavy OEM customization or future Android changes may break hooks.
+*   Conflicts with other power-management Xposed modules are possible, though less likely given the specific target.
+*   If Battery Saver still turns off, double-check module activation, scope (`Android System`) or (`System Framework`), and reboot. Check Xposed logs for errors related to `AlwaysBatterySaver`.
+*   Report issues with logs on the [Issues](https://github.com/icepony/AlwaysBatterySaver/issues) page.
 
 ## Contribution
 
-Contributions are welcome! Feel free to open issues or submit pull requests. Key areas for improvement include refining hooks, implementing dynamic method finding, and testing across various devices/ROMs.
+Contributions (issues, pull requests) are welcome, especially regarding compatibility improvements, hook refinements, and testing across different ROMs/versions.
 
 ## Check Out My Other Project!
-
-If you find system modifications useful, you might also like:
 
 *   **[AlwaysCreateUser](https://github.com/icepony/AlwaysCreateUser)**: An Xposed Framework module that bypasses Android's user/profile creation limits, if you like system-level app cloning or isolation
 
 ## Like the Project?
 
-If this module helps you out, I'd be really happy if you could visit the [Releases](https://github.com/icepony/AlwaysBatterySaver/releases) page and leave a reaction (like 👍 or ❤️) on the version you downloaded! just a small reaction on the release makes my day. 😊
+A small reaction (👍/❤️) on the [Releases](https://github.com/icepony/AlwaysBatterySaver/releases) page helps!
 
 ## Thanks
 
-- [Gemini](https://gemini.google.com/app)
-- [DeepSeek](https://www.deepseek.com/)
-- [ChatGPT](https://chatgpt.com/)
-- [CorePatch](https://github.com/LSPosed/CorePatch)
+*   Xposed Framework Developers
+*   [CorePatch](https://github.com/LSPosed/CorePatch) (Inspiration for hook structure)
+*   LLMs (Gemini, DeepSeek, ChatGPT) for assistance.
 
 ---
-*Disclaimer: Modifying system behavior with Xposed can potentially lead to instability. Use at your own risk.*
+*Disclaimer: Use Xposed modules responsibly. Modifying system behavior carries inherent risks.*
