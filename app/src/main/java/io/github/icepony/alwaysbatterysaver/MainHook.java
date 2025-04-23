@@ -34,11 +34,14 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
         if (lpparam.packageName.equals("android")) {
             reloadPreferences();
-            log("Initializing module hook for Android process. Module enabled preference: " + isModuleEnabled);
+            log("Handling Android package");
 
             batterySaverStateMachineClass = findClass("com.android.server.power.batterysaver.BatterySaverStateMachine", lpparam.classLoader);
             mIsPowered = findField(batterySaverStateMachineClass, "mIsPowered");
-
+            if (batterySaverStateMachineClass == null) {
+                log("BatterySaverStateMachine class not found.");
+                return;
+            }
             hookIsPowered();
             hookBatterySaverEnabler();
         }
@@ -59,7 +62,7 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
                     return;
                 }
 
-                if (isLockOnPower) {
+                if (isLockOnPower && mIsPowered != null) {
                     if (mIsPowered.getBoolean(param.thisObject)) {
                         log(param.method.getName() + ": Lock on power.");
                         param.setResult(null);
@@ -104,7 +107,7 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
                     return;
                 }
 
-                if (isFakePower) {
+                if (isFakePower && mIsPowered != null) {
                     log(param.method.getName() + ": Fake power.");
                     mIsPowered.setBoolean(param.thisObject, false);
                 }
