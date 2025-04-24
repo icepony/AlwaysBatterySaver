@@ -51,6 +51,10 @@ public class XposedHelper {
     public static Set<XC_MethodHook.Unhook> hookAllMethods(Class<?> hookClass, String methodName, XC_MethodHook callback) {
         try {
             Set<XC_MethodHook.Unhook> unhooks = XposedBridge.hookAllMethods(hookClass, methodName, callback);
+            if (unhooks.isEmpty()) {
+                log("No hooks found for " + hookClass.getName() + "#" + methodName);
+                return null;
+            }
             log("Successfully added hook for " + hookClass.getName() + "#" + methodName + " with " + unhooks.size() + " hooks.");
             return unhooks;
         } catch (Throwable e) {
