@@ -16,8 +16,9 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
     private boolean isLockOnPluggedIn;
     private boolean isLockOnPower;
     private boolean isLockAny;
+    private boolean isPowered = false;
 
-    private void reloadPreferences() {
+    private void reloadPreferences(Object thisObject) {
         prefs.reload();
         isModuleEnabled = prefs.getBoolean("enable_module", true);
         isLockOnPluggedIn = prefs.getBoolean("lock_on_plugged_in", true);
@@ -25,23 +26,28 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
         isFakePower = prefs.getBoolean("fake_power", false);
         isLockAny = prefs.getBoolean("lock_any", false);
 
+
+        try {
+            isPowered = mIsPoweredField.getBoolean(thisObject);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Class<?> batterySaverStateMachineClass;
-    private Field mIsPowered;
+    private Field mIsPoweredField;
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) {
         if (lpparam.packageName.equals("android")) {
-            reloadPreferences();
             log("Handling Android package");
 
             batterySaverStateMachineClass = findClass("com.android.server.power.batterysaver.BatterySaverStateMachine", lpparam.classLoader);
-            mIsPowered = findField(batterySaverStateMachineClass, "mIsPowered");
             if (batterySaverStateMachineClass == null) {
                 log("BatterySaverStateMachine class not found.");
                 return;
             }
+            mIsPoweredField = findField(batterySaverStateMachineClass, "mIsPowered");
             hookIsPowered();
             hookBatterySaverEnabler();
         }
@@ -51,7 +57,7 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
         hookAllMethods(batterySaverStateMachineClass, "enableBatterySaverLocked", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                reloadPreferences();
+                reloadPreferences(param.thisObject);
                 if (!isModuleEnabled) {
                     return;
                 }
@@ -62,54 +68,55 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
                     return;
                 }
 
-                if (isLockOnPower && mIsPowered != null) {
-                    if (mIsPowered.getBoolean(param.thisObject)) {
-                        log(param.method.getName() + ": Lock on power.");
-                        param.setResult(null);
-                    }
+                if (isLockOnPower && isPowered) {
+                    log(param.method.getName() + ": Lock on power.");
+                    param.setResult(null);
+                    return;
                 }
 
-                if (isLockOnPluggedIn) {
-//                    boolean isPluggedIn = Arrays.stream(param.args).anyMatch(o -> o.equals(REASON_CODE_PLUGGED_IN) && o.equals(REASON_STRING_PLUGGED_IN));
-                    boolean isPluggedIn = Arrays.asList(param.args).contains(REASON_STRING_PLUGGED_IN);
-                    if (isPluggedIn) {
-                        log(param.method.getName() + ": Lock on plugged in.");
-                        param.setResult(null);
-                    }
+                if (isLockOnPluggedIn && Arrays.asList(param.args).contains(REASON_STRING_PLUGGED_IN)) {
+                    log(param.method.getName() + ": Lock on plugged in.");
+                    param.setResult(null);
+                    return;
+                }
+
+                if (isFakePower && isPowered) {
+                    log(param.method.getName() + ": Fake power.");
+                    mIsPoweredField.setBoolean(param.thisObject, false);
+                    return;
                 }
             }
         });
     }
 
     private void hookIsPowered() {
-//        hookAllMethods(batterySaverStateMachineClass, "setBatteryStatus", new XC_MethodHook() {
-//            @Override
-//            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-//                reloadPreferences();
-//                if (!isModuleEnabled) {
-//                    return;
-//                }
-//
-//                if (isFakePower) {
-//                    boolean newPowered = (boolean) param.args[0];
-//                    if (newPowered) {
-//                        param.setResult(null);
-//                    }
-//                }
-//            }
-//        });
-
-        hookAllMethods(batterySaverStateMachineClass, "updateStateLocked", new XC_MethodHook() {
+        hookAllMethods(batterySaverStateMachineClass, "setBatteryStatus", new XC_MethodHook() {
             @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                reloadPreferences();
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                reloadPreferences(param.thisObject);
                 if (!isModuleEnabled) {
                     return;
                 }
 
-                if (isFakePower && mIsPowered != null) {
+                if (isFakePower && isPowered) {
+                    mIsPoweredField.setBoolean(param.thisObject, false);
+                    return;
+                }
+            }
+        });
+
+        hookAllMethods(batterySaverStateMachineClass, "doAutoBatterySaverLocked", new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                reloadPreferences(param.thisObject);
+                if (!isModuleEnabled) {
+                    return;
+                }
+
+                if (isFakePower && isPowered) {
                     log(param.method.getName() + ": Fake power.");
-                    mIsPowered.setBoolean(param.thisObject, false);
+                    mIsPoweredField.setBoolean(param.thisObject, false);
+                    return;
                 }
             }
         });
