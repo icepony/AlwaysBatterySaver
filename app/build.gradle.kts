@@ -14,13 +14,6 @@ android {
         versionName = "2.1"
     }
 
-    applicationVariants.all {
-        val variant = this
-        outputs.all {
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "AlwaysBatterySaver_v${variant.versionName}-${variant.buildType.name}.apk"
-        }
-    }
     buildFeatures {
         buildConfig = true
     }
@@ -36,6 +29,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set(
+                "AlwaysBatterySaver_v${output.versionName.get()}-${variant.buildType}.apk"
+            )
+        }
     }
 }
 
