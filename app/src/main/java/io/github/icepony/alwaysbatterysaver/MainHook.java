@@ -1,10 +1,13 @@
 package io.github.icepony.alwaysbatterysaver;
 
+import android.app.Activity;
+
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
@@ -50,6 +53,9 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
             mIsPoweredField = findField(batterySaverStateMachineClass, "mIsPowered");
             hookIsPowered();
             hookBatterySaverEnabler();
+        } else if (lpparam.packageName.equals(BuildConfig.APPLICATION_ID)) {
+            findAndHookMethod(BuildConfig.APPLICATION_ID + ".MainActivity", lpparam.classLoader,
+                    "showActivationWarning", Activity.class, XC_MethodReplacement.DO_NOTHING);
         }
     }
 

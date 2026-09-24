@@ -11,9 +11,6 @@
             android:name="xposedmodule"
             android:value="true" />
         <meta-data
-            android:name="xposedsharedprefs"
-            android:value="true" />
-        <meta-data
             android:name="xposeddescription"
             android:value="@string/xposed_desc" />
         <meta-data
