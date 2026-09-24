@@ -13,54 +13,54 @@ Android's default behavior disables Battery Saver upon charging. This module int
 
 ## Technical Overview
 
-The module hooks methods within `com.android.server.power.batterysaver.BatterySaverStateMachine`:
+The module hooks methods within [`com.android.server.power.batterysaver.BatterySaverStateMachine`](https://github.com/aosp-mirror/platform_frameworks_base/blob/main/services/core/java/com/android/server/power/batterysaver/BatterySaverStateMachine.java):
 
-1.  **`enableBatterySaverLocked` (all variants):**
-    *   Hooks all methods with this name using `XposedBridge.hookAllMethods`.
-    *   The `beforeHookedMethod` callback checks configured options and can prevent the original method execution (`param.setResult(null)`):
-        *   `lock_on_plugged_in`: Checks if method arguments contain `REASON_STRING_PLUGGED_IN` ("Plugged in").
-        *   `lock_on_power`: Uses reflection to check the current state of the `mIsPowered` field within the `BatterySaverStateMachine` instance.
-        *   `lock_any`: Unconditionally blocks the method call.
+1. **`enableBatterySaverLocked` (all variants):**
 
-2.  **`updateStateLocked`:**
-    *   Hooks this method using `XposedBridge.hookAllMethods`.
-    *   The `beforeHookedMethod` callback modifies internal state:
-        *   `fake_power`: If enabled, uses reflection to set the `mIsPowered` field of the `BatterySaverStateMachine` instance to `false` *before* the original method runs, effectively hiding the charging status from the state machine's internal logic.
+    * `lock_on_plugged_in`: Checks if method arguments contain `REASON_STRING_PLUGGED_IN` (`"Plugged in"`).
+    * `lock_on_power`: Uses reflection to check the current state of the `mIsPowered` field within the `BatterySaverStateMachine` instance.
+    * `lock_any`: Unconditionally blocks the method call.
+
+2. **`updateStateLocked`:**
+
+    * `fake_power`: If enabled, uses reflection to set the `mIsPowered` field of the `BatterySaverStateMachine` instance to `false` *before* the original method runs, effectively hiding the charging status from the state machine's internal logic.
 
 **Note:** This module relies on specific class/method names and the `mIsPowered` field name within AOSP. Significant changes by OEMs or in future Android versions could impact functionality.
 
-## Future Ideas (Maybe!)
+## Known Issues
 
-I have some ideas for future enhancements, but these are not guaranteed:
+In some cases, other system components or features may change the Battery Saver state without going through `BatterySaverStateMachine`. This can cause the internal state of the system to become inconsistent with the actual Battery Saver state.
 
-*   ~~**Settings UI:** Add a simple configuration UI to toggle the module's functionality or potentially add more options later.~~
-*   **UI Unlocking:** Hook the Battery Saver settings page and the Quick Settings tile to prevent them from becoming disabled or grayed out while the device is charging and Battery Saver is forced on by this module.
-*   **Extend Support to Android 5.0 (Lollipop):** Power Saving Mode seems to be present in Android since API level 21, so supporting older devices might be feasible. This would require investigating compatibility with the `BatterySaverStateMachine` class or equivalent in those versions.
+For example, a feature that automatically disables Battery Saver when the battery reaches 90% may change the state independently of `BatterySaverStateMachine`. When this happens, the system may end up in an inconsistent state where Battery Saver cannot be disabled normally through Settings or other system UI.
 
-## Troubleshooting / Compatibility
+Usually, a **reboot** is enough to restore the Battery Saver state to a consistent state.
 
-*   Functionality depends on AOSP class/method/field names (`BatterySaverStateMachine`, `enableBatterySaverLocked`, `updateStateLocked`, `mIsPowered`). Heavy OEM customization or future Android changes may break hooks.
-*   Conflicts with other power-management Xposed modules are possible, though less likely given the specific target.
-*   If Battery Saver still turns off, double-check module activation, scope (`Android System`) or (`System Framework`), and reboot. Check Xposed logs for errors related to `AlwaysBatterySaver`.
-*   Report issues with logs on the [Issues](https://github.com/icepony/AlwaysBatterySaver/issues) page.
+Alternatively, you can try manually resetting the Battery Saver mode from a shell:
 
-## Contribution
+```sh
+cmd power set-mode 0
+```
 
-Contributions (issues, pull requests) are welcome, especially regarding compatibility improvements, hook refinements, and testing across different ROMs/versions.
+or
 
-## Check Out My Other Project!
+```sh
+cmd power set-mode 1
+```
 
-*   **[AlwaysCreateUser](https://github.com/icepony/AlwaysCreateUser)**: An Xposed Framework module that bypasses Android's user/profile creation limits, if you like system-level app cloning or isolation
+Depending on the device and Android version, **you may need to run these commands multiple times, or repeatedly switch between `0` and `1`,** before the Battery Saver state is restored to a consistent state.
 
-## Like the Project?
+## More Ideas
 
-A small reaction (👍/❤️) on the [Releases](https://github.com/icepony/AlwaysBatterySaver/releases) page helps!
+* ~~**Settings UI:** Add a simple configuration UI to toggle the module's functionality or potentially add more options later.~~
+* **UI Unlocking:** Hook the Battery Saver settings page and the Quick Settings tile to prevent them from becoming disabled or grayed out while the device is charging and Battery Saver is forced on by this module.
+* **Extend Support to Android 5.0 (Lollipop):** Power Saving Mode seems to be present in Android since API level 21, so supporting older devices might be feasible. This would require investigating compatibility with the `BatterySaverStateMachine` class or an equivalent implementation in those versions.
 
 ## Thanks
 
-*   Xposed Framework Developers
-*   [CorePatch](https://github.com/LSPosed/CorePatch) (Inspiration for hook structure)
-*   LLMs (Gemini, DeepSeek, ChatGPT) for assistance.
+* Xposed Framework Developers
+* [CorePatch](https://github.com/LSPosed/CorePatch) (Inspiration for hook structure)
+* LLMs (Gemini, DeepSeek, ChatGPT) for assistance.
 
 ---
+
 *Disclaimer: Use Xposed modules responsibly. Modifying system behavior carries inherent risks.*
