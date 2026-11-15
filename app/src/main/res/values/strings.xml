@@ -19,6 +19,8 @@
     <string name="fake_power_summary">Prevents the system from telling Battery Saver that the device is charging.</string>
 
     <string name="category_experimental">Experimental</string>
+    <string name="ignore_is_powered_title">Ignore isPowered</string>
+    <string name="ignore_is_powered_summary">Always treats the device as charging for module checks.</string>
     <string name="lock_any_title">Lock Battery Saver State</string>
     <string name="lock_any_summary">Aggressively block *any* change (manual or automatic) to the Battery Saver status. Use with caution!</string>
     <string name="lock_any_warning_title">Warning: Experimental Feature</string>

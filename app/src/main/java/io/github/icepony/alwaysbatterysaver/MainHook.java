@@ -31,7 +31,7 @@ public class MainHook extends XposedHelper implements IXposedHookLoadPackage {
 
 
         try {
-            isPowered = mIsPoweredField.getBoolean(thisObject);
+            isPowered = prefs.getBoolean("ignore_is_powered", false) || mIsPoweredField.getBoolean(thisObject);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

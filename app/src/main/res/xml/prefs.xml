@@ -33,6 +33,11 @@
         android:title="@string/category_experimental">
         <SwitchPreference
             android:defaultValue="false"
+            android:key="ignore_is_powered"
+            android:summary="@string/ignore_is_powered_summary"
+            android:title="@string/ignore_is_powered_title" />
+        <SwitchPreference
+            android:defaultValue="false"
             android:key="lock_any"
             android:summary="@string/lock_any_summary"
             android:title="@string/lock_any_title" />
